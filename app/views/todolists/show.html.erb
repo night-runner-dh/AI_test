@@ -1,0 +1,16 @@
+<h2>タイトル</h2>
+<p><%= @list.title %></p>
+<h2>本文</h2>
+<p><%= @list.body %></p>
+<p class="sentiment-score">本文の感情分析スコア[<%= @list.score %>]</p>
+<h2>画像</h2>
+<% if @list.image.attached? %>
+  <%= image_tag @list.image.variant(resize:'300x300') %>
+<% end %>
+<div class="tag-box">
+<% @list.tags.each do |tag| %>
+  <span class="label"><%= tag.name %></span>
+<% end %>
+</div>
+<%= link_to "削除", destroy_todolist_path(@list.id), method: :delete, "data-confirm" => "本当に削除しますか？" %>
+<%= link_to "編集", edit_todolist_path(@list.id) %>
