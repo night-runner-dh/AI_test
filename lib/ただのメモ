@@ -1,0 +1,72 @@
+require 'base64'
+require 'json'
+require 'net/https'
+
+
+module Vision
+    class << self
+        def get_image_data(image_file)
+            # APIのURL作成
+            api_url = "https://vision.googleapis.com/v1/images:annotate?key=#{ENV['GOOGLE_API_KEY']}"
+            
+            # 画像をbase64にエンコード
+            base64_image = Base64.encode64(image_file.tempfile.read)
+            
+            #APIリクエスト用のJSONパラメータ
+            params = {
+                requests: [{
+                    image:{
+                        content: base64_image
+                    },
+                    features: [
+                        {
+                            type: 'LABEL_DETECTION'
+                        },
+                        {
+                            type: 'SAFE_SEARCH_DETECTION'
+                        }
+                    ]
+                }]
+            }.to_json
+            
+            # Google Cloud Vision APIにリクエスト
+            uri = URI.parse(api_url)
+            https = Net::HTTP.new(uri.host, uri.port)
+            https.use_ssl = true
+            request = Net::HTTP::Post.new(uri.request_uri)
+            request['Content-Type'] = 'application/json'
+            response = https.request(request, params)
+            response_body = JSON.parse(response.body)
+            Rails.logger.debug "API response:#{response_body}"
+            # APIレスポンス出力
+            if (error = response_body['responses'][0]['error']).present?
+              raise error['message']
+            else
+              label_annotations = response_body['responses'][0]['labelAnnotations'].pluck('description').take(3)
+              violent = false
+              adult = false
+              tags = []
+
+              label_annotations.each do |annotation|
+                description = annotation['description']
+                tags << description
+
+                if description.include?('violent')
+                  violent = true
+                elsif description.include?('adult')
+                  adult = true
+                end
+              end
+              # ここから先の処理を追加したい内容にカスタマイズしてください
+              # タグの生成結果を使った処理を追加する場合はここに記述してください
+              # 例えば、暴力的またはアダルトな要素が含まれていれば画像をはじく処理を追加する場合は
+              if violent || adult
+              # 画像をはじく処理を追加
+              # 例えば、弾かれた画像の情報をログに出力したり、投稿を拒否したりするなどの処理を実装します
+              end
+              # 他の処理を追加したい場合はここに記述してください
+              # 最終的な結果を返すはずのコード
+            end
+        end
+    end
+end

@@ -8,7 +8,9 @@ class TodolistsController < ApplicationController
     @list.score = Language.get_data(list_params[:body]) 
     tags = Vision.get_image_data(list_params[:image]) 
     if @list.save
-      tags.each do |tag|
+      tags[:labels].each do |tag|
+        # セーフサーチの結果を除外する
+        next if tag.start_with?(":safe_search")
         @list.tags.create(name: tag)
       end 
       redirect_to todolist_path(@list.id)
